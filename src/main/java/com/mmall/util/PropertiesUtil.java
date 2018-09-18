@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
 
@@ -21,11 +22,14 @@ public class PropertiesUtil {
     static {
         String fileName = "mmall.properties";
         props = new Properties();
+        InputStream is = PropertiesUtil.class.getClassLoader().getResourceAsStream(fileName);
         try {
-            props.load(new InputStreamReader(PropertiesUtil.class.getClassLoader().getResourceAsStream(fileName),"UTF-8"));
+            props.load(is);
         } catch (IOException e) {
-            logger.error("配置文件读取异常",e);
+            logger.error("配置文件异常",e);
+            e.printStackTrace();
         }
+
     }
 
     public static String getProperty(String key){
@@ -37,14 +41,11 @@ public class PropertiesUtil {
     }
 
     public static String getProperty(String key,String defaultValue){
-
         String value = props.getProperty(key.trim());
         if(StringUtils.isBlank(value)){
-            value = defaultValue;
+            return defaultValue;
         }
         return value.trim();
     }
-
-
 
 }

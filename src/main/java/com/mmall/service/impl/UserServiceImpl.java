@@ -7,6 +7,7 @@ import com.mmall.dao.UserMapper;
 import com.mmall.pojo.User;
 import com.mmall.service.IUserService;
 import com.mmall.util.MD5Util;
+import com.mmall.util.RedisShardedPoolUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,7 @@ import java.util.concurrent.ExecutionException;
  * Created by 谭皓文 on 2018/8/10.
  */
 @Service("iUserService")
-public class UserService implements IUserService{
+public class UserServiceImpl implements IUserService{
 
     @Autowired
     private UserMapper userMapper;
@@ -30,7 +31,7 @@ public class UserService implements IUserService{
             return ServerResponse.createByErrorMessage("用户名不存在");
         }
         //todo 密码登陆md5
-        User user = userMapper.selectLogin(username,password);
+        User user = userMapper.selectLogin(username,MD5Util.MD5EncodeUtf8(password));
 
         if(user == null){
             return ServerResponse.createByErrorMessage("密码错误");
@@ -51,7 +52,7 @@ public class UserService implements IUserService{
         if(!validResponse.isSuccess()){
             return validResponse;
         }
-        validResponse = this.checkVaild(user.getEmail(),Const.EAMIL);
+        validResponse = this.checkVaild(user.getEmail(),Const.EMAIL);
         if(!validResponse.isSuccess()){
 
             return validResponse;
@@ -62,7 +63,7 @@ public class UserService implements IUserService{
 //            return  ServerResponse.createByErrorMessage("邮箱已经存在");
 //        }
 
-        user.setRole(Const.Role.ROLE_CUSTOEMR);
+        user.setRole(Const.Role.ROLE_CUSTOMER);
 
         //md5
         user.setPassword(MD5Util.MD5EncodeUtf8(user.getPassword()));
@@ -86,7 +87,7 @@ public class UserService implements IUserService{
                     return ServerResponse.createByErrorMessage("用户名已经存在");
                 }
             }
-            if(Const.EAMIL.equals(type)){
+            if(Const.EMAIL.equals(type)){
                 int resultCount = userMapper.checkEmail(str);
                 if(resultCount > 0){
 
@@ -115,7 +116,8 @@ public class UserService implements IUserService{
         int result = userMapper.checkAnswer(username,question,answer);
         if(result > 0){
             String forgetToken = UUID.randomUUID().toString();
-            TokenCache.setKey(TokenCache.TOKEN_PREFIX+username,forgetToken);
+//            TokenCache.setKey(TokenCache.TOKEN_PREFIX+username,forgetToken);
+            RedisShardedPoolUtil.setEx(TokenCache.TOKEN_PREFIX+username,Const.RedisCacheExtime.REDIS_SESSION_EXTIME,forgetToken);
             return ServerResponse.createBySuccess(forgetToken);
         }
         return  ServerResponse.createByErrorMessage("问题答案错误");
@@ -129,7 +131,8 @@ public class UserService implements IUserService{
         if(validResponse.isSuccess()){
             return ServerResponse.createByErrorMessage("用户名为空");
         }
-        String token = TokenCache.getKey(TokenCache.TOKEN_PREFIX+username);
+//        String token = TokenCache.getKey(TokenCache.TOKEN_PREFIX+username);
+        String token = RedisShardedPoolUtil.get(TokenCache.TOKEN_PREFIX+username);
         if(StringUtils.isBlank(token)){
             return ServerResponse.createByErrorMessage("token过期");
         }
@@ -185,4 +188,17 @@ public class UserService implements IUserService{
         user.setPassword(StringUtils.EMPTY);
         return ServerResponse.createBySuccess(user);
     }
+
+    /**
+     *校验用户是否为管理员
+     * @param user
+     * @return
+     */
+    public ServerResponse checkAdminRole(User user){
+        if(user != null && user.getRole().intValue() == Const.Role.ROLE_ADMIN){
+            return ServerResponse.createBySuccess();
+        }
+        return ServerResponse.createByError();
+    }
+
 }

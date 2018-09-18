@@ -200,20 +200,43 @@
     </where>
   </select>
   
-  <select id="selectByNameAndCategoryIds" resultMap="BaseResultMap" parameterType="map">
-    SELECT
+  <!--<select id="selectByNameAndCategoryIds" resultMap="BaseResultMap" parameterType="map">-->
+    <!--SELECT-->
+    <!--<include refid="Base_Column_List"></include>-->
+    <!--from mmall_product-->
+    <!--where status = 1-->
+    <!--<if test="productName != null">-->
+      <!--and name like #{productName}-->
+    <!--</if>-->
+    <!--<if test="categoryIdList != null" >-->
+      <!--and category_id in-->
+      <!--<foreach item="item" index="index" open="(" separator="," close=")" collection="categoryIdList">-->
+        <!--#{item}-->
+      <!--</foreach>-->
+    <!--</if>-->
+  <!--</select>-->
+  
+  <select id="selectByNameAndCategoryIds" parameterType="map" resultMap="BaseResultMap">
     <include refid="Base_Column_List"></include>
-    from mmall_product
+    FROM mmall_product
     where status = 1
     <if test="productName != null">
       and name like #{productName}
     </if>
-    <if test="categoryIdList != null" >
+    <if test="categoryIdList != null">
       and category_id in
-      <foreach item="item" index="index" open="(" separator="," close=")" collection="categoryIdList">
+      <foreach item="item" collection="categoryIdList" separator="," open="(" close=")">
         #{item}
       </foreach>
     </if>
-  </select>
 
+  </select>
+  
+  <select id="selectStockByProduct" resultType="int" parameterType="java.lang.Integer">
+    SELECT
+    stock
+    FROM mmall_product
+    WHERE id = #{id}
+    for Update
+  </select>
 </mapper>
