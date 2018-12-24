@@ -32,6 +32,7 @@ public class JsonUtil{
         objectMapper.setDateFormat(new SimpleDateFormat(DateTimeUtil.STANDARD_FORMAT));
         //忽略json字符串中存在，bean中不存在
         objectMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES,false);
+
     }
 
     public static <T> String obj2String(T obj){

@@ -31,6 +31,7 @@ public class RedisPool {
         config.setBlockWhenExhausted(true); //连接耗尽时，false抛出异常，默认为true
 
         pool = new JedisPool(config,redisIp,redisPort,1000*2);
+
     }
 
     static {
